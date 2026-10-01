@@ -1,0 +1,5 @@
+/target/
+/.runtime/
+/config/local.properties
+*.log
+.DS_Store

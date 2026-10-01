@@ -1,0 +1,4 @@
+package vn.edu.huy.controller;
+
+import javax.servlet.*;import javax.servlet.http.*;import java.io.*;import java.util.*;import vn.edu.huy.model.*;import vn.edu.huy.util.*;import vn.edu.huy.service.impl.*;
+public class ProductsController_24162049 extends HttpServlet {protected void doGet(HttpServletRequest r,HttpServletResponse s)throws ServletException,IOException{List<Category_24162049> cats=new CategoryServiceImpl_24162049().active();int id=Web_24162049.number(r,"categoryId",0);if(id!=0&&cats.stream().noneMatch(c->c.getCategoryId()==id)){s.sendError(404);return;}r.setAttribute("categories",cats);r.setAttribute("categoryId",id);r.setAttribute("categoryTitle",cats.stream().filter(c->c.getCategoryId()==id).map(Category_24162049::getCategoryName).findFirst().orElse("Tất cả video"));r.setAttribute("page",new VideoServiceImpl_24162049().page(id,Web_24162049.number(r,"page",1)));Web_24162049.view(r,s,"products");}}

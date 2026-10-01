@@ -1,0 +1,13 @@
+package vn.edu.huy.service.impl;
+
+import java.security.*;import java.nio.charset.StandardCharsets;import java.util.*;import javax.servlet.http.*;import vn.edu.huy.dto.*;import vn.edu.huy.model.*;import vn.edu.huy.service.*;import vn.edu.huy.validator.*;
+public class OtpServiceImpl_24162049 implements OtpService_24162049 {
+ private final EmailService_24162049 mail;private final AuthService_24162049 auth;private final java.time.Clock clock;private final SecureRandom random=new SecureRandom();
+ public OtpServiceImpl_24162049(){this(new EmailServiceImpl_24162049(),new AuthServiceImpl_24162049(),java.time.Clock.systemUTC());}
+ public OtpServiceImpl_24162049(EmailService_24162049 mail,AuthService_24162049 auth,java.time.Clock clock){this.mail=mail;this.auth=auth;this.clock=clock;}
+ private String hash(String code){try{return Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-256").digest(code.getBytes(StandardCharsets.UTF_8)));}catch(NoSuchAlgorithmException e){throw new IllegalStateException(e);}}
+ private void send(HttpSession s,PendingRegistration_24162049 p){Long last=(Long)s.getAttribute("lastOtpSent");long now=clock.millis();Validation_24162049.require(last==null||now-last>=60000,"Vui lòng chờ 60 giây giữa hai lần gửi OTP.");String code=String.format(java.util.Locale.ROOT,"%06d",random.nextInt(1000000));mail.send(p.user.getEmail(),"Mã xác thực tài khoản Huy Video","Mã OTP của bạn: "+code+"\nMã có hiệu lực 5 phút. Không chia sẻ mã này.");p.otpHash=hash(code);p.sentAt=now;p.expiresAt=now+300000;p.attempts=0;s.setAttribute("lastOtpSent",now);s.setAttribute("pending",p);}
+ public void begin(HttpSession s,User_24162049 u){synchronized(s){PendingRegistration_24162049 p=new PendingRegistration_24162049();p.user=u;send(s,p);}}
+ public void resend(HttpSession s){synchronized(s){PendingRegistration_24162049 p=(PendingRegistration_24162049)s.getAttribute("pending");Validation_24162049.require(p!=null,"Phiên đăng ký đã kết thúc. Vui lòng đăng ký lại.");send(s,p);}}
+ public void verify(HttpSession s,String code){synchronized(s){PendingRegistration_24162049 p=(PendingRegistration_24162049)s.getAttribute("pending");Validation_24162049.require(p!=null,"Phiên đăng ký đã kết thúc. Vui lòng đăng ký lại.");Validation_24162049.require(clock.millis()<p.expiresAt,"OTP đã hết hạn. Hãy gửi lại mã.");Validation_24162049.require(p.attempts<5,"Đã nhập sai 5 lần. Hãy yêu cầu mã mới.");p.attempts++;Validation_24162049.require(code!=null&&code.matches("[0-9]{6}")&&MessageDigest.isEqual(hash(code).getBytes(StandardCharsets.UTF_8),p.otpHash.getBytes(StandardCharsets.UTF_8)),"Mã OTP không chính xác. Bạn còn "+(5-p.attempts)+" lần thử.");auth.activate(p.user);s.removeAttribute("pending");}}
+}

@@ -1,0 +1,6 @@
+document.querySelectorAll('form[data-confirm]').forEach(form => form.addEventListener('submit', event => {if (!confirm(form.dataset.confirm)) event.preventDefault();}));
+const confirmForm=document.querySelector('[data-password-confirm]');
+if(confirmForm){const password=confirmForm.querySelector('[name=password]'),repeat=confirmForm.querySelector('[name=confirm]');const validate=()=>repeat.setCustomValidity(password.value===repeat.value?'':'Xác nhận mật khẩu chưa khớp.');password.addEventListener('input',validate);repeat.addEventListener('input',validate);}
+document.querySelectorAll('[data-resend-at]').forEach(button=>{const update=()=>{const left=Math.max(0,Math.ceil((Number(button.dataset.resendAt)+60000-Date.now())/1000));button.disabled=left>0;button.textContent=left?'Gửi lại sau '+left+' giây':'Gửi lại OTP';};update();setInterval(update,1000);});
+const current=location.pathname;document.querySelectorAll('nav a').forEach(a=>{const path=new URL(a.href).pathname;a.classList.toggle('active',current===path || (path.endsWith('/admin/users')&&current.startsWith(path+'/')));});
+document.querySelectorAll('img.avatar').forEach(img=>img.addEventListener('error',()=>{const span=document.createElement('span');span.className=img.className;span.textContent='?';img.replaceWith(span);}));

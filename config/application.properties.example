@@ -1,0 +1,15 @@
+# Copy to config/local.properties (ignored by Git), then set APP_CONFIG to its absolute path.
+# Environment variables override properties. Never commit real credentials.
+# Cách 1 trên Windows: cần mssql-jdbc_auth DLL trong java.library.path.
+DB_URL=jdbc:sqlserver://localhost:1433;databaseName=VideoHub24162049;encrypt=true;trustServerCertificate=true;integratedSecurity=true
+DB_USER=
+DB_PASSWORD=
+# Cách 2: bỏ integratedSecurity=true và điền DB_USER/DB_PASSWORD của SQL login.
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASSWORD=
+SMTP_FROM=
+SMTP_AUTH=true
+SMTP_STARTTLS=true
+APP_BASE_URL=http://localhost:8080/video-24162049

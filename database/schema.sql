@@ -1,0 +1,84 @@
+-- SQL Server 2019+ / SQL Server 2022. Run with SSMS or sqlcmd as database administrator.
+-- Non-destructive: fail if the project database already exists. Never drop existing data.
+USE master;
+GO
+IF DB_ID(N'VideoHub24162049') IS NOT NULL
+    THROW 50001, 'VideoHub24162049 already exists. Use another empty database or restore a backup.', 1;
+GO
+CREATE DATABASE VideoHub24162049 COLLATE Latin1_General_100_CI_AS_SC;
+GO
+USE VideoHub24162049;
+GO
+CREATE SEQUENCE VideoSequence AS BIGINT START WITH 1 INCREMENT BY 1 NO CYCLE;
+CREATE TABLE Users (
+ Username NVARCHAR(50) NOT NULL PRIMARY KEY,
+ Password NVARCHAR(100) NOT NULL,
+ Phone NVARCHAR(15) NOT NULL,
+ Fullname NVARCHAR(50) NOT NULL,
+ Email NVARCHAR(150) NOT NULL UNIQUE,
+ Admin BIT NOT NULL DEFAULT 0,
+ Active BIT NOT NULL DEFAULT 0,
+ Images NVARCHAR(500) NULL
+);
+CREATE TABLE Category (
+ CategoryId INT IDENTITY(1,1) PRIMARY KEY,
+ CategoryName NVARCHAR(100) NOT NULL,
+ CategoryCode NVARCHAR(100) NOT NULL UNIQUE,
+ Images NVARCHAR(500) NULL,
+ Status BIT NOT NULL DEFAULT 1
+);
+CREATE TABLE Videos (
+ VideoId NVARCHAR(50) NOT NULL PRIMARY KEY,
+ Title NVARCHAR(200) NOT NULL,
+ Poster NVARCHAR(500) NOT NULL,
+ Views INT NOT NULL DEFAULT 0 CHECK(Views>=0),
+ Description NVARCHAR(500) NOT NULL,
+ Active BIT NOT NULL DEFAULT 1,
+ CategoryId INT NOT NULL REFERENCES Category(CategoryId),
+ Price DECIMAL(18,2) NOT NULL DEFAULT 99000 CHECK(Price>=0),
+ Stock INT NOT NULL DEFAULT 25 CHECK(Stock>=0)
+);
+CREATE TABLE Shares (
+ ShareId INT IDENTITY(1,1) PRIMARY KEY,
+ Emails NVARCHAR(50) NOT NULL,
+ SharedDate DATE NOT NULL DEFAULT CONVERT(DATE,GETDATE()),
+ Username NVARCHAR(50) NOT NULL REFERENCES Users(Username),
+ VideoId NVARCHAR(50) NOT NULL REFERENCES Videos(VideoId)
+);
+CREATE TABLE Favorites (
+ FavoriteId INT IDENTITY(1,1) PRIMARY KEY,
+ LikedDate DATE NOT NULL DEFAULT CONVERT(DATE,GETDATE()),
+ VideoId NVARCHAR(50) NOT NULL REFERENCES Videos(VideoId),
+ Username NVARCHAR(50) NOT NULL REFERENCES Users(Username),
+ CONSTRAINT UQ_Favorites_User_Video UNIQUE(Username,VideoId)
+);
+CREATE TABLE Orders (
+ OrderId BIGINT IDENTITY(1,1) PRIMARY KEY,
+ Username NVARCHAR(50) NOT NULL REFERENCES Users(Username),
+ RecipientName NVARCHAR(100) NOT NULL,
+ Phone NVARCHAR(15) NOT NULL,
+ Address NVARCHAR(300) NOT NULL,
+ Note NVARCHAR(500) NULL,
+ PaymentMethod VARCHAR(10) NOT NULL DEFAULT 'COD' CHECK(PaymentMethod='COD'),
+ Status VARCHAR(20) NOT NULL DEFAULT 'NEW' CHECK(Status IN ('NEW','CONFIRMED','PREPARING','SHIPPING','DELIVERING','DELIVERED','CANCELLED','RETURNED')),
+ TotalAmount DECIMAL(18,2) NOT NULL CHECK(TotalAmount>=0),
+ CreatedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+ UpdatedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME()
+);
+CREATE TABLE OrderItems (
+ OrderItemId BIGINT IDENTITY(1,1) PRIMARY KEY,
+ OrderId BIGINT NOT NULL REFERENCES Orders(OrderId),
+ VideoId NVARCHAR(50) NOT NULL REFERENCES Videos(VideoId),
+ Title NVARCHAR(200) NOT NULL,
+ Poster NVARCHAR(500) NOT NULL,
+ UnitPrice DECIMAL(18,2) NOT NULL CHECK(UnitPrice>=0),
+ Quantity INT NOT NULL CHECK(Quantity BETWEEN 1 AND 20)
+);
+CREATE INDEX IX_Videos_Category_Active_Id ON Videos(CategoryId,Active,VideoId) INCLUDE(Title,Poster,Views);
+CREATE INDEX IX_Favorites_Video ON Favorites(VideoId);
+CREATE INDEX IX_Shares_Video ON Shares(VideoId);
+CREATE INDEX IX_Shares_User ON Shares(Username);
+CREATE INDEX IX_Users_Fullname ON Users(Fullname);
+CREATE INDEX IX_Orders_User_Status_Date ON Orders(Username,Status,CreatedAt DESC);
+CREATE INDEX IX_OrderItems_Order ON OrderItems(OrderId);
+GO
